@@ -37,6 +37,11 @@ final class SetListViewModel {
     }
 
     func load() async {
+        // Show the saved copy straight away, then refresh it from the API.
+        if sets.isEmpty, let saved = client.cachedSets(), !saved.isEmpty {
+            sets = saved
+            state = .loaded
+        }
         if sets.isEmpty { state = .loading }
         do {
             sets = try await client.fetchSets()

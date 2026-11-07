@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct PokemonTCGTrackerApp: App {
@@ -18,5 +19,6 @@ struct PokemonTCGTrackerApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: OwnedCard.self)
     }
 }

@@ -38,3 +38,45 @@ struct TCGSetDecodingTests {
         #expect(page.data[1].printedTotal == 128)
     }
 }
+
+struct TCGCardTests {
+    func card(_ number: String) -> TCGCard {
+        let url = URL(string: "https://example.com")!
+        return TCGCard(id: "x-\(number)", name: "Test", number: number, supertype: nil, rarity: nil,
+                       images: .init(small: url, large: url))
+    }
+
+    @Test func sortsByCollectorNumber() {
+        let shuffled = ["TG02", "10", "2", "TG01", "1", "100", "12a"].map(card)
+        let sorted = shuffled.sorted(by: TCGCard.byCollectorNumber).map(\.number)
+        #expect(sorted == ["1", "2", "10", "100", "12a", "TG01", "TG02"])
+    }
+
+    @Test func decodesCardWithoutRarity() throws {
+        let json = """
+        {"data":[{"id":"me55-1","name":"Exeggcute","supertype":"Pokémon","number":"1",
+          "images":{"small":"https://images.scrydex.com/pokemon/me55-1/small","large":"https://images.scrydex.com/pokemon/me55-1/large"}}],
+         "page":1,"pageSize":1,"count":1,"totalCount":161}
+        """.data(using: .utf8)!
+        let page = try PokemonTCGClient.decoder.decode(PagedResponse<TCGCard>.self, from: json)
+        #expect(page.data.first?.name == "Exeggcute")
+        #expect(page.data.first?.rarity == nil)
+    }
+}
+
+struct DiskCacheTests {
+    @Test func savesAndLoadsSets() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let cache = DiskCache(directory: directory)
+
+        let url = URL(string: "https://example.com/logo")!
+        let set = TCGSet(id: "me5", name: "Pitch Black", series: "Mega Evolution", printedTotal: 84, total: 120,
+                         ptcgoCode: "PBL", releaseDate: Date(timeIntervalSince1970: 1_784_246_400),
+                         images: .init(symbol: url, logo: url))
+
+        #expect(cache.load([TCGSet].self, key: "sets") == nil)
+        cache.save([set], key: "sets")
+        #expect(cache.load([TCGSet].self, key: "sets") == [set])
+    }
+}

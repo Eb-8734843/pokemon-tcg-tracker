@@ -6,7 +6,7 @@
 import Foundation
 
 /// A Pokémon TCG expansion set, as returned by `GET /v2/sets`.
-nonisolated struct TCGSet: Decodable, Identifiable, Hashable, Sendable {
+nonisolated struct TCGSet: Codable, Identifiable, Hashable, Sendable {
     let id: String
     let name: String
     let series: String
@@ -18,7 +18,7 @@ nonisolated struct TCGSet: Decodable, Identifiable, Hashable, Sendable {
     let releaseDate: Date
     let images: Images
 
-    nonisolated struct Images: Decodable, Hashable, Sendable {
+    nonisolated struct Images: Codable, Hashable, Sendable {
         let symbol: URL
         let logo: URL
     }

@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SetListView: View {
     @State private var model = SetListViewModel()
@@ -15,6 +16,9 @@ struct SetListView: View {
                 .searchable(text: $model.searchText, prompt: "Search sets or series")
                 .task { await model.load() }
                 .refreshable { await model.load() }
+                .navigationDestination(for: TCGSet.self) { set in
+                    SetDetailView(set: set)
+                }
         }
     }
 
@@ -37,7 +41,9 @@ struct SetListView: View {
                 ForEach(model.seriesSections, id: \.series) { section in
                     Section(section.series) {
                         ForEach(section.sets) { set in
-                            SetRow(set: set)
+                            NavigationLink(value: set) {
+                                SetRow(set: set)
+                            }
                         }
                     }
                 }
@@ -92,4 +98,5 @@ struct SetRow: View {
 
 #Preview {
     SetListView()
+        .modelContainer(for: OwnedCard.self, inMemory: true)
 }
