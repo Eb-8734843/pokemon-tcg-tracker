@@ -1,0 +1,11 @@
+// Shared build settings for the PokemonTCGTracker app target.
+// Committed to git. Secrets live in Secrets.xcconfig (git-ignored).
+
+// Adds custom keys (like the API key below) to the generated Info.plist.
+INFOPLIST_FILE = Config/Info.plist
+
+// Empty by default so the app still builds without a key.
+POKEMON_TCG_API_KEY =
+
+// Optional include: the "?" means the build still works if the file is missing.
+#include? "Secrets.xcconfig"

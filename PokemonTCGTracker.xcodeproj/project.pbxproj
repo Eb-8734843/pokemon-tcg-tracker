@@ -27,6 +27,7 @@
 		C6C63909309F41150037E906 /* PokemonTCGTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PokemonTCGTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6C63918309F41170037E906 /* PokemonTCGTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PokemonTCGTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6C63922309F41170037E906 /* PokemonTCGTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PokemonTCGTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6C6FA01309F41170037E906 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +76,7 @@
 		C6C63900309F41150037E906 = {
 			isa = PBXGroup;
 			children = (
+				C6C6FA02309F41170037E906 /* Config */,
 				C6C6390B309F41150037E906 /* PokemonTCGTracker */,
 				C6C6391B309F41170037E906 /* PokemonTCGTrackerTests */,
 				C6C63925309F41170037E906 /* PokemonTCGTrackerUITests */,
@@ -90,6 +92,14 @@
 				C6C63922309F41170037E906 /* PokemonTCGTrackerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C6C6FA02309F41170037E906 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				C6C6FA01309F41170037E906 /* App.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -390,6 +400,7 @@
 		};
 		C6C6392D309F41170037E906 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6C6FA01309F41170037E906 /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -421,6 +432,7 @@
 		};
 		C6C6392E309F41170037E906 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C6C6FA01309F41170037E906 /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
