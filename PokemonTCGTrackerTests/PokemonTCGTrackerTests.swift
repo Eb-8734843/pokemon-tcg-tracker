@@ -42,7 +42,7 @@ struct TCGSetDecodingTests {
 struct TCGCardTests {
     func card(_ number: String) -> TCGCard {
         let url = URL(string: "https://example.com")!
-        return TCGCard(id: "x-\(number)", name: "Test", number: number, supertype: nil, rarity: nil,
+        return TCGCard(id: "x-\(number)", name: "Test", number: number, supertype: nil, rarity: nil, types: nil,
                        images: .init(small: url, large: url))
     }
 
@@ -78,5 +78,58 @@ struct DiskCacheTests {
         #expect(cache.load([TCGSet].self, key: "sets") == nil)
         cache.save([set], key: "sets")
         #expect(cache.load([TCGSet].self, key: "sets") == [set])
+    }
+}
+
+struct CardFilterTests {
+    let url = URL(string: "https://example.com")!
+
+    func card(_ number: String, _ name: String, rarity: String?, types: [String]?, supertype: String = "Pokémon") -> TCGCard {
+        TCGCard(id: "s-\(number)", name: name, number: number, supertype: supertype, rarity: rarity,
+                types: types, images: .init(small: url, large: url))
+    }
+
+    var cards: [TCGCard] {
+        [
+            card("1", "Tropius", rarity: "Common", types: ["Grass"]),
+            card("8", "Mega Delphox ex", rarity: "Double Rare", types: ["Fire"]),
+            card("9", "Sizzlipede", rarity: "Common", types: ["Fire"]),
+            card("70", "Boss's Orders", rarity: "Uncommon", types: nil, supertype: "Trainer"),
+            card("TG01", "Delphox", rarity: "Trainer Gallery Rare Holo", types: ["Fire"]),
+        ]
+    }
+
+    func numbers(_ filter: CardFilter, owned: Set<String> = []) -> [String] {
+        filter.apply(to: cards, ownedIDs: owned).map(\.number)
+    }
+
+    @Test func noFiltersShowsEverything() {
+        #expect(numbers(CardFilter()).count == 5)
+        #expect(CardFilter().hasActiveFilters == false)
+    }
+
+    @Test func searchMatchesNamePartOrExactNumber() {
+        #expect(numbers(CardFilter(searchText: "delph")) == ["8", "TG01"])
+        #expect(numbers(CardFilter(searchText: "tg01")) == ["TG01"])
+        #expect(numbers(CardFilter(searchText: "  9 ")) == ["9"])
+    }
+
+    @Test func filtersByRarityTypeAndOwnership() {
+        #expect(numbers(CardFilter(rarity: "Common")) == ["1", "9"])
+        #expect(numbers(CardFilter(type: "Fire")) == ["8", "9", "TG01"])
+        #expect(numbers(CardFilter(type: "Trainer")) == ["70"])
+        #expect(numbers(CardFilter(ownership: .owned), owned: ["s-8"]) == ["8"])
+        #expect(numbers(CardFilter(ownership: .missing), owned: ["s-8"]) == ["1", "9", "70", "TG01"])
+    }
+
+    @Test func filtersCombine() {
+        let filter = CardFilter(searchText: "delphox", type: "Fire", ownership: .missing)
+        #expect(filter.hasActiveFilters)
+        #expect(numbers(filter, owned: ["s-8"]) == ["TG01"])
+    }
+
+    @Test func listsFilterOptionsInOrder() {
+        #expect(CardFilter.rarities(in: cards) == ["Common", "Double Rare", "Uncommon", "Trainer Gallery Rare Holo"])
+        #expect(CardFilter.types(in: cards) == ["Grass", "Fire", "Trainer"])
     }
 }

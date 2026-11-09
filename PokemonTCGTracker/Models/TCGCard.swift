@@ -14,6 +14,8 @@ nonisolated struct TCGCard: Codable, Identifiable, Hashable, Sendable {
     let supertype: String?
     /// Missing for a few promo cards.
     let rarity: String?
+    /// Energy types such as "Fire". Only Pokémon cards have them.
+    let types: [String]?
     let images: Images
 
     nonisolated struct Images: Codable, Hashable, Sendable {
@@ -23,6 +25,13 @@ nonisolated struct TCGCard: Codable, Identifiable, Hashable, Sendable {
 }
 
 extension TCGCard {
+    /// What the type filter matches on: the energy type for Pokémon,
+    /// otherwise "Trainer" or "Energy".
+    nonisolated var typeCategories: [String] {
+        if let types, !types.isEmpty { return types }
+        return [supertype ?? "Other"]
+    }
+
     /// Orders cards the way they're numbered in the binder: 2 before 10, TG01 after 200.
     nonisolated static func byCollectorNumber(_ a: TCGCard, _ b: TCGCard) -> Bool {
         let aNumeric = Int(a.number) != nil, bNumeric = Int(b.number) != nil

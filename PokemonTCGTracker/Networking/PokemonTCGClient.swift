@@ -78,7 +78,7 @@ nonisolated struct PokemonTCGClient: Sendable {
                 URLQueryItem(name: "q", value: "set.id:\(setID)"),
                 URLQueryItem(name: "page", value: String(page)),
                 URLQueryItem(name: "pageSize", value: "250"),
-                URLQueryItem(name: "select", value: "id,name,number,supertype,rarity,images"),
+                URLQueryItem(name: "select", value: "id,name,number,supertype,rarity,types,images"),
             ]
             let response: PagedResponse<TCGCard> = try await get(components.url!)
             cards += response.data

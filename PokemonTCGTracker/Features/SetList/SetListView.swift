@@ -8,6 +8,7 @@ import SwiftData
 
 struct SetListView: View {
     @State private var model = SetListViewModel()
+    @Query private var ownedCards: [OwnedCard]
 
     var body: some View {
         NavigationStack {
@@ -37,12 +38,13 @@ struct SetListView: View {
                     .buttonStyle(.borderedProminent)
             }
         case .loaded:
+            let ownedBySet = Dictionary(grouping: ownedCards, by: \.setID).mapValues(\.count)
             List {
                 ForEach(model.seriesSections, id: \.series) { section in
                     Section(section.series) {
                         ForEach(section.sets) { set in
                             NavigationLink(value: set) {
-                                SetRow(set: set)
+                                SetRow(set: set, ownedCount: ownedBySet[set.id, default: 0])
                             }
                         }
                     }
@@ -59,6 +61,7 @@ struct SetListView: View {
 
 struct SetRow: View {
     let set: TCGSet
+    var ownedCount = 0
 
     var body: some View {
         HStack(spacing: 14) {
@@ -89,6 +92,11 @@ struct SetRow: View {
                 }
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+                if ownedCount > 0 {
+                    SetProgressView(owned: ownedCount, total: set.total)
+                        .padding(.top, 2)
+                }
             }
         }
         .padding(.vertical, 4)
