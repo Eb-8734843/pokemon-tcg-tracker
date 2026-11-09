@@ -18,9 +18,9 @@ final class SetListViewModel {
     private(set) var state: State = .loading
     var searchText = ""
 
-    private let client: PokemonTCGClient
+    private let client: TCGdexClient
 
-    init(client: PokemonTCGClient = PokemonTCGClient()) {
+    init(client: TCGdexClient = TCGdexClient()) {
         self.client = client
     }
 

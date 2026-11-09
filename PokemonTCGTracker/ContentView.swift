@@ -9,8 +9,14 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
+
     var body: some View {
         SetListView()
+            .task {
+                // One-time move of cards saved before the switch to TCGdex.
+                await OwnedCardMigration.runIfNeeded(context: modelContext)
+            }
     }
 }
 

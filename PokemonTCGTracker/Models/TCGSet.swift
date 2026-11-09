@@ -5,30 +5,32 @@
 
 import Foundation
 
-/// A Pokémon TCG expansion set, as returned by `GET /v2/sets`.
+/// A Pokémon TCG expansion set, from TCGdex.
 nonisolated struct TCGSet: Codable, Identifiable, Hashable, Sendable {
+    /// TCGdex set ID, e.g. "me05".
     let id: String
     let name: String
+    /// Series name, e.g. "Mega Evolution".
     let series: String
-    /// Number printed on the cards (e.g. "/128"). Missing for some sets.
+    /// Number printed on the cards (e.g. "/84"), not counting secret rares.
     let printedTotal: Int?
     /// Total including secret rares.
     let total: Int
-    let ptcgoCode: String?
     let releaseDate: Date
-    let images: Images
+    /// Base URL of the set logo (no file extension). Missing for some older sets and promos.
+    let logoBase: URL?
+    /// Base URL of the set symbol (no file extension). Missing for many sets.
+    let symbolBase: URL?
 
-    nonisolated struct Images: Codable, Hashable, Sendable {
-        let symbol: URL
-        let logo: URL
-    }
+    var logoURL: URL? { logoBase?.appendingPathExtension("webp") }
+    var symbolURL: URL? { symbolBase?.appendingPathExtension("webp") }
 }
 
-/// The paged wrapper the API puts around every list response.
-nonisolated struct PagedResponse<Item: Decodable & Sendable>: Decodable, Sendable {
-    let data: [Item]
-    let page: Int
-    let pageSize: Int
-    let count: Int
-    let totalCount: Int
+/// A set as saved by the old pokemontcg.io version of the app. Kept only so
+/// the one-time move of owned cards can read that saved set list.
+nonisolated struct LegacySet: Decodable, Sendable {
+    let id: String
+    let name: String
+    let total: Int
+    let releaseDate: Date
 }

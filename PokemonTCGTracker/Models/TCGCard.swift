@@ -5,23 +5,24 @@
 
 import Foundation
 
-/// A single card, as returned by `GET /v2/cards`.
+/// A single card, from TCGdex.
 nonisolated struct TCGCard: Codable, Identifiable, Hashable, Sendable {
+    /// TCGdex card ID, e.g. "me05-008".
     let id: String
     let name: String
-    /// Collector number. Usually "12" but can be "TG05", "SV001", "12a".
+    /// Collector number as printed, e.g. "008", "TG05", "SV001".
     let number: String
-    let supertype: String?
-    /// Missing for a few promo cards.
+    /// "Pokemon", "Trainer" or "Energy".
+    let category: String?
+    /// Missing for a few promo cards, or when only the short card details loaded.
     let rarity: String?
     /// Energy types such as "Fire". Only Pokémon cards have them.
     let types: [String]?
-    let images: Images
+    /// Base URL of the card image (no size or extension). Missing for some cards.
+    let imageBase: URL?
 
-    nonisolated struct Images: Codable, Hashable, Sendable {
-        let small: URL
-        let large: URL
-    }
+    var smallImageURL: URL? { imageBase?.appending(path: "low.webp") }
+    var largeImageURL: URL? { imageBase?.appending(path: "high.webp") }
 }
 
 extension TCGCard {
@@ -29,13 +30,25 @@ extension TCGCard {
     /// otherwise "Trainer" or "Energy".
     nonisolated var typeCategories: [String] {
         if let types, !types.isEmpty { return types }
-        return [supertype ?? "Other"]
+        switch category {
+        case "Pokemon", nil: return ["Other"]
+        case let category?: return [category]
+        }
+    }
+
+    /// Collector number without padding zeros: "008" → "8", "TG05" stays "TG05".
+    nonisolated var displayNumber: String {
+        Int(number).map(String.init) ?? number
     }
 
     /// Orders cards the way they're numbered in the binder: 2 before 10, TG01 after 200.
     nonisolated static func byCollectorNumber(_ a: TCGCard, _ b: TCGCard) -> Bool {
-        let aNumeric = Int(a.number) != nil, bNumeric = Int(b.number) != nil
-        if aNumeric != bNumeric { return aNumeric }   // plain numbers before prefixed ones
-        return a.number.localizedStandardCompare(b.number) == .orderedAscending
+        let aNumber = Int(a.number), bNumber = Int(b.number)
+        switch (aNumber, bNumber) {
+        case let (x?, y?): return x < y
+        case (.some, nil): return true    // plain numbers before prefixed ones
+        case (nil, .some): return false
+        case (nil, nil): return a.number.localizedStandardCompare(b.number) == .orderedAscending
+        }
     }
 }

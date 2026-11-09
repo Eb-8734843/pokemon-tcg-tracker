@@ -29,7 +29,7 @@ nonisolated struct CardFilter: Equatable, Sendable {
         return cards.filter { card in
             if !query.isEmpty,
                !card.name.localizedCaseInsensitiveContains(query),
-               card.number.caseInsensitiveCompare(query) != .orderedSame {
+               !OwnedCardMigration.numbersMatch(card.number, query) {
                 return false
             }
             if let rarity, card.rarity != rarity { return false }

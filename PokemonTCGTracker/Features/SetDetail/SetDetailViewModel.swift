@@ -18,9 +18,9 @@ final class SetDetailViewModel {
     private(set) var cards: [TCGCard] = []
     private(set) var state: State = .loading
 
-    private let client: PokemonTCGClient
+    private let client: TCGdexClient
 
-    init(set: TCGSet, client: PokemonTCGClient = PokemonTCGClient()) {
+    init(set: TCGSet, client: TCGdexClient = TCGdexClient()) {
         self.set = set
         self.client = client
     }

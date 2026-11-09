@@ -65,14 +65,23 @@ struct SetRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            AsyncImage(url: set.images.logo) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFit()
-                case .failure:
-                    Image(systemName: "photo").foregroundStyle(.secondary)
-                default:
-                    ProgressView()
+            Group {
+                if let logoURL = set.logoURL {
+                    AsyncImage(url: logoURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFit()
+                        case .failure:
+                            Image(systemName: "photo").foregroundStyle(.secondary)
+                        default:
+                            ProgressView()
+                        }
+                    }
+                } else {
+                    // Some older sets and promos have no logo.
+                    Image(systemName: "rectangle.stack")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
                 }
             }
             .frame(width: 96, height: 44)
@@ -82,12 +91,13 @@ struct SetRow: View {
                     .font(.headline)
                     .lineLimit(2)
                 HStack(spacing: 6) {
-                    AsyncImage(url: set.images.symbol) { image in
-                        image.resizable().scaledToFit()
-                    } placeholder: {
-                        Color.clear
+                    // Only takes up space once the symbol has loaded: some TCGdex
+                    // symbol links don't work, and that shouldn't indent the text.
+                    AsyncImage(url: set.symbolURL) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFit().frame(width: 14, height: 14)
+                        }
                     }
-                    .frame(width: 14, height: 14)
                     Text("\(set.total) cards · \(set.releaseDate.formatted(date: .abbreviated, time: .omitted))")
                 }
                 .font(.subheadline)

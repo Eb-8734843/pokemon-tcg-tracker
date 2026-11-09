@@ -29,6 +29,14 @@ nonisolated struct DiskCache: Sendable {
         }
     }
 
+    /// Deletes every saved file whose key doesn't start with `prefix`.
+    func removeAll(exceptPrefix prefix: String) {
+        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
+        for file in files where !file.lastPathComponent.hasPrefix(prefix) {
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
+
     private func fileURL(for key: String) -> URL {
         let safeKey = key.replacingOccurrences(of: "/", with: "_")
         return directory.appending(path: "\(safeKey).json")

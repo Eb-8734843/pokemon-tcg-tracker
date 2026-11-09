@@ -76,7 +76,7 @@ struct SetDetailView: View {
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: owned)
-        .accessibilityLabel("\(card.name), number \(card.number)")
+        .accessibilityLabel("\(card.name), number \(card.displayNumber)")
         .accessibilityValue(owned ? "Owned" : "Not owned")
         .accessibilityHint("Double tap to mark as \(owned ? "not owned" : "owned")")
     }
@@ -179,14 +179,21 @@ struct CardCell: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            AsyncImage(url: card.images.small) { phase in
+            AsyncImage(url: card.smallImageURL) { phase in
                 switch phase {
                 case .success(let image):
                     image.resizable().scaledToFit()
                 case .failure:
                     placeholder.overlay(Image(systemName: "photo").foregroundStyle(.secondary))
                 default:
-                    placeholder.overlay(ProgressView())
+                    if card.smallImageURL == nil {
+                        // A few cards have no image in TCGdex: show the name instead.
+                        placeholder.overlay(
+                            Text(card.name).font(.caption).multilineTextAlignment(.center).padding(6)
+                        )
+                    } else {
+                        placeholder.overlay(ProgressView())
+                    }
                 }
             }
             .aspectRatio(63.0 / 88.0, contentMode: .fit)   // real card proportions
@@ -203,7 +210,7 @@ struct CardCell: View {
             }
             .animation(.easeInOut(duration: 0.15), value: isOwned)
 
-            Text("#\(card.number)")
+            Text("#\(card.displayNumber)")
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
         }

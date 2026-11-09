@@ -9,93 +9,119 @@ import Foundation
 import Testing
 @testable import PokemonTCGTracker
 
-struct TCGSetDecodingTests {
-    // Trimmed copy of a real /v2/sets response (November 2026).
-    let json = """
-    {"data":[
-      {"id":"me55c","name":"30th Celebration: Classic Collection","series":"Mega Evolution","total":30,
-       "ptcgoCode":"30C","releaseDate":"2026/09/16",
-       "images":{"symbol":"https://images.scrydex.com/pokemon/me55c-symbol/symbol","logo":"https://images.scrydex.com/pokemon/me55c-logo/logo"}},
-      {"id":"me55","name":"30th Celebration","series":"Mega Evolution","printedTotal":128,"total":161,
-       "releaseDate":"2026/09/16",
-       "images":{"symbol":"https://images.scrydex.com/pokemon/me55-symbol/symbol","logo":"https://images.scrydex.com/pokemon/me55-logo/logo"}}
-    ],"page":1,"pageSize":2,"count":2,"totalCount":176}
-    """.data(using: .utf8)!
+let testURL = URL(string: "https://example.com")!
 
-    @Test func decodesSetsPage() throws {
-        let page = try PokemonTCGClient.decoder.decode(PagedResponse<TCGSet>.self, from: json)
-        #expect(page.totalCount == 176)
-        #expect(page.data.count == 2)
+func makeCard(_ number: String, _ name: String = "Test", category: String? = "Pokemon",
+              rarity: String? = nil, types: [String]? = nil, image: URL? = testURL) -> TCGCard {
+    TCGCard(id: "s-\(number)", name: name, number: number, category: category,
+            rarity: rarity, types: types, imageBase: image)
+}
 
-        let classic = page.data[0]
-        #expect(classic.id == "me55c")
-        #expect(classic.printedTotal == nil)
-        #expect(classic.images.logo.absoluteString.hasSuffix("me55c-logo/logo"))
+// MARK: - Decoding TCGdex responses
 
-        let parts = Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: classic.releaseDate)
-        #expect(parts.year == 2026 && parts.month == 9 && parts.day == 16)
+struct TCGdexDecodingTests {
+    @Test func decodesGraphQLSets() throws {
+        // Trimmed copy of a real TCGdex GraphQL response (November 2026).
+        let json = """
+        {"data":{"sets":[
+          {"id":"me05","name":"Pitch Black","logo":"https://assets.tcgdex.net/en/me/me05/logo","symbol":null,
+           "releaseDate":"2026-07-17","serie":{"name":"Mega Evolution"},"cardCount":{"official":84,"total":120}},
+          {"id":"base2","name":"Jungle","logo":"https://assets.tcgdex.net/en/base/base2/logo",
+           "symbol":"https://assets.tcgdex.net/univ/base/base2/symbol",
+           "releaseDate":"1999-06-16","serie":{"name":"Base"},"cardCount":{"official":64,"total":64}},
+          {"id":"empty","name":"No Cards","logo":null,"symbol":null,
+           "releaseDate":"2020-01-01","serie":{"name":"Misc"},"cardCount":{"official":0,"total":0}}
+        ]}}
+        """.data(using: .utf8)!
 
-        #expect(page.data[1].printedTotal == 128)
+        let response = try TCGdexClient.decoder.decode(GraphQLResponse<SetsData>.self, from: json)
+        let sets = try #require(response.data?.sets).compactMap(\.tcgSet)
+        #expect(sets.map(\.id) == ["me05", "base2"])   // the empty set is skipped
+
+        let pitchBlack = sets[0]
+        #expect(pitchBlack.series == "Mega Evolution")
+        #expect(pitchBlack.printedTotal == 84 && pitchBlack.total == 120)
+        #expect(pitchBlack.logoURL?.absoluteString == "https://assets.tcgdex.net/en/me/me05/logo.webp")
+        #expect(pitchBlack.symbolURL == nil)
+
+        let parts = Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: pitchBlack.releaseDate)
+        #expect(parts.year == 2026 && parts.month == 7 && parts.day == 17)
+    }
+
+    @Test func decodesFullCard() throws {
+        let json = """
+        {"id":"me05-008","localId":"008","name":"Mega Delphox ex","image":"https://assets.tcgdex.net/en/me/me05/008",
+         "category":"Pokemon","rarity":"Double rare","types":["Fire"],"hp":350,"pricing":{}}
+        """.data(using: .utf8)!
+        let card = try TCGdexClient.decoder.decode(CardDetail.self, from: json).tcgCard
+        #expect(card.id == "me05-008")
+        #expect(card.number == "008" && card.displayNumber == "8")
+        #expect(card.rarity == "Double rare")
+        #expect(card.typeCategories == ["Fire"])
+        #expect(card.smallImageURL?.absoluteString == "https://assets.tcgdex.net/en/me/me05/008/low.webp")
+    }
+
+    @Test func decodesSetCardListWithMissingImage() throws {
+        let json = """
+        {"id":"me05","name":"Pitch Black","cards":[
+          {"id":"me05-001","localId":"001","name":"Tropius","image":"https://assets.tcgdex.net/en/me/me05/001"},
+          {"id":"me05-120","localId":"120","name":"Mega Darkrai ex"}]}
+        """.data(using: .utf8)!
+        let cards = try TCGdexClient.decoder.decode(SetDetail.self, from: json).cards.map(\.tcgCard)
+        #expect(cards.count == 2)
+        #expect(cards[1].smallImageURL == nil)
+        #expect(cards[1].rarity == nil)
     }
 }
+
+// MARK: - Cards
 
 struct TCGCardTests {
-    func card(_ number: String) -> TCGCard {
-        let url = URL(string: "https://example.com")!
-        return TCGCard(id: "x-\(number)", name: "Test", number: number, supertype: nil, rarity: nil, types: nil,
-                       images: .init(small: url, large: url))
-    }
-
     @Test func sortsByCollectorNumber() {
-        let shuffled = ["TG02", "10", "2", "TG01", "1", "100", "12a"].map(card)
+        let shuffled = ["TG02", "010", "002", "TG01", "001", "100", "12a"].map { makeCard($0) }
         let sorted = shuffled.sorted(by: TCGCard.byCollectorNumber).map(\.number)
-        #expect(sorted == ["1", "2", "10", "100", "12a", "TG01", "TG02"])
+        #expect(sorted == ["001", "002", "010", "100", "12a", "TG01", "TG02"])
     }
 
-    @Test func decodesCardWithoutRarity() throws {
-        let json = """
-        {"data":[{"id":"me55-1","name":"Exeggcute","supertype":"Pokémon","number":"1",
-          "images":{"small":"https://images.scrydex.com/pokemon/me55-1/small","large":"https://images.scrydex.com/pokemon/me55-1/large"}}],
-         "page":1,"pageSize":1,"count":1,"totalCount":161}
-        """.data(using: .utf8)!
-        let page = try PokemonTCGClient.decoder.decode(PagedResponse<TCGCard>.self, from: json)
-        #expect(page.data.first?.name == "Exeggcute")
-        #expect(page.data.first?.rarity == nil)
+    @Test func typeCategoriesUseCategoryForTrainersAndEnergy() {
+        #expect(makeCard("1", category: "Trainer").typeCategories == ["Trainer"])
+        #expect(makeCard("2", category: "Energy").typeCategories == ["Energy"])
+        #expect(makeCard("3", category: "Pokemon", types: nil).typeCategories == ["Other"])
     }
 }
 
+// MARK: - Saving on device
+
 struct DiskCacheTests {
-    @Test func savesAndLoadsSets() throws {
+    @Test func savesLoadsAndRemovesOldFiles() throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let cache = DiskCache(directory: directory)
 
-        let url = URL(string: "https://example.com/logo")!
-        let set = TCGSet(id: "me5", name: "Pitch Black", series: "Mega Evolution", printedTotal: 84, total: 120,
-                         ptcgoCode: "PBL", releaseDate: Date(timeIntervalSince1970: 1_784_246_400),
-                         images: .init(symbol: url, logo: url))
+        let set = TCGSet(id: "me05", name: "Pitch Black", series: "Mega Evolution", printedTotal: 84, total: 120,
+                         releaseDate: Date(timeIntervalSince1970: 1_784_246_400), logoBase: testURL, symbolBase: nil)
 
-        #expect(cache.load([TCGSet].self, key: "sets") == nil)
-        cache.save([set], key: "sets")
-        #expect(cache.load([TCGSet].self, key: "sets") == [set])
+        #expect(cache.load([TCGSet].self, key: "tcgdex-sets") == nil)
+        cache.save([set], key: "tcgdex-sets")
+        cache.save(["old"], key: "sets")
+        #expect(cache.load([TCGSet].self, key: "tcgdex-sets") == [set])
+
+        cache.removeAll(exceptPrefix: "tcgdex-")
+        #expect(cache.load([String].self, key: "sets") == nil)
+        #expect(cache.load([TCGSet].self, key: "tcgdex-sets") == [set])
     }
 }
 
+// MARK: - Search and filters
+
 struct CardFilterTests {
-    let url = URL(string: "https://example.com")!
-
-    func card(_ number: String, _ name: String, rarity: String?, types: [String]?, supertype: String = "Pokémon") -> TCGCard {
-        TCGCard(id: "s-\(number)", name: name, number: number, supertype: supertype, rarity: rarity,
-                types: types, images: .init(small: url, large: url))
-    }
-
     var cards: [TCGCard] {
         [
-            card("1", "Tropius", rarity: "Common", types: ["Grass"]),
-            card("8", "Mega Delphox ex", rarity: "Double Rare", types: ["Fire"]),
-            card("9", "Sizzlipede", rarity: "Common", types: ["Fire"]),
-            card("70", "Boss's Orders", rarity: "Uncommon", types: nil, supertype: "Trainer"),
-            card("TG01", "Delphox", rarity: "Trainer Gallery Rare Holo", types: ["Fire"]),
+            makeCard("001", "Tropius", rarity: "Common", types: ["Grass"]),
+            makeCard("008", "Mega Delphox ex", rarity: "Double rare", types: ["Fire"]),
+            makeCard("009", "Sizzlipede", rarity: "Common", types: ["Fire"]),
+            makeCard("070", "Boss's Orders", category: "Trainer", rarity: "Uncommon"),
+            makeCard("TG01", "Delphox", rarity: "Trainer Gallery Rare Holo", types: ["Fire"]),
         ]
     }
 
@@ -108,28 +134,85 @@ struct CardFilterTests {
         #expect(CardFilter().hasActiveFilters == false)
     }
 
-    @Test func searchMatchesNamePartOrExactNumber() {
-        #expect(numbers(CardFilter(searchText: "delph")) == ["8", "TG01"])
+    @Test func searchMatchesNamePartOrNumber() {
+        #expect(numbers(CardFilter(searchText: "delph")) == ["008", "TG01"])
         #expect(numbers(CardFilter(searchText: "tg01")) == ["TG01"])
-        #expect(numbers(CardFilter(searchText: "  9 ")) == ["9"])
+        #expect(numbers(CardFilter(searchText: "  9 ")) == ["009"])    // "9" finds "009"
+        #expect(numbers(CardFilter(searchText: "009")) == ["009"])
     }
 
     @Test func filtersByRarityTypeAndOwnership() {
-        #expect(numbers(CardFilter(rarity: "Common")) == ["1", "9"])
-        #expect(numbers(CardFilter(type: "Fire")) == ["8", "9", "TG01"])
-        #expect(numbers(CardFilter(type: "Trainer")) == ["70"])
-        #expect(numbers(CardFilter(ownership: .owned), owned: ["s-8"]) == ["8"])
-        #expect(numbers(CardFilter(ownership: .missing), owned: ["s-8"]) == ["1", "9", "70", "TG01"])
+        #expect(numbers(CardFilter(rarity: "Common")) == ["001", "009"])
+        #expect(numbers(CardFilter(type: "Fire")) == ["008", "009", "TG01"])
+        #expect(numbers(CardFilter(type: "Trainer")) == ["070"])
+        #expect(numbers(CardFilter(ownership: .owned), owned: ["s-008"]) == ["008"])
+        #expect(numbers(CardFilter(ownership: .missing), owned: ["s-008"]) == ["001", "009", "070", "TG01"])
     }
 
     @Test func filtersCombine() {
         let filter = CardFilter(searchText: "delphox", type: "Fire", ownership: .missing)
         #expect(filter.hasActiveFilters)
-        #expect(numbers(filter, owned: ["s-8"]) == ["TG01"])
+        #expect(numbers(filter, owned: ["s-008"]) == ["TG01"])
     }
 
     @Test func listsFilterOptionsInOrder() {
-        #expect(CardFilter.rarities(in: cards) == ["Common", "Double Rare", "Uncommon", "Trainer Gallery Rare Holo"])
+        #expect(CardFilter.rarities(in: cards) == ["Common", "Double rare", "Uncommon", "Trainer Gallery Rare Holo"])
         #expect(CardFilter.types(in: cards) == ["Grass", "Fire", "Trainer"])
+    }
+}
+
+// MARK: - Moving owned cards from pokemontcg.io to TCGdex
+
+struct OwnedCardMigrationTests {
+    func day(_ y: Int, _ m: Int, _ d: Int) -> Date {
+        var c = DateComponents(); c.year = y; c.month = m; c.day = d
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "UTC")!
+        return cal.date(from: c)!
+    }
+
+    var newSets: [TCGSet] {
+        [
+            TCGSet(id: "me05", name: "Pitch Black", series: "Mega Evolution", printedTotal: 84, total: 120,
+                   releaseDate: day(2026, 7, 17), logoBase: nil, symbolBase: nil),
+            TCGSet(id: "30th-c", name: "30th Classic Collection", series: "Mega Evolution", printedTotal: 30, total: 30,
+                   releaseDate: day(2026, 9, 16), logoBase: nil, symbolBase: nil),
+        ]
+    }
+
+    @Test func matchesSetByName() {
+        let old = LegacySet(id: "me5", name: "Pitch Black", total: 120, releaseDate: day(2026, 7, 17))
+        #expect(OwnedCardMigration.matchSet(old, in: newSets)?.id == "me05")
+    }
+
+    @Test func matchesRenamedSetByDateAndCount() {
+        let old = LegacySet(id: "me55c", name: "30th Celebration: Classic Collection", total: 30, releaseDate: day(2026, 9, 16))
+        #expect(OwnedCardMigration.matchSet(old, in: newSets)?.id == "30th-c")
+    }
+
+    @Test func doesNotGuessUnknownSets() {
+        let old = LegacySet(id: "xx", name: "Made Up", total: 99, releaseDate: day(2001, 1, 1))
+        #expect(OwnedCardMigration.matchSet(old, in: newSets) == nil)
+    }
+
+    @Test func matchesCardsByNumberAndName() {
+        let summaries = [
+            CardSummary(id: "me05-008", localId: "008", name: "Mega Delphox ex", image: nil),
+            CardSummary(id: "me05-009", localId: "009", name: "Sizzlipede", image: nil),
+        ]
+        #expect(OwnedCardMigration.matchCard(number: "8", name: "Mega Delphox ex", in: summaries)?.id == "me05-008")
+        // Only card with that number, even if the name is written differently.
+        #expect(OwnedCardMigration.matchCard(number: "9", name: "Sizzlipede (Reverse)", in: summaries)?.id == "me05-009")
+        #expect(OwnedCardMigration.matchCard(number: "500", name: "Nope", in: summaries) == nil)
+    }
+
+    @Test func legacySetListDecodes() throws {
+        // How the old version saved its set list (default JSONEncoder dates).
+        let json = """
+        [{"id":"me5","name":"Pitch Black","series":"Mega Evolution","printedTotal":84,"total":120,
+          "ptcgoCode":"PBL","releaseDate":805939200,"images":{"symbol":"https://x/s","logo":"https://x/l"}}]
+        """.data(using: .utf8)!
+        let sets = try JSONDecoder().decode([LegacySet].self, from: json)
+        #expect(sets.first?.id == "me5")
+        #expect(sets.first?.total == 120)
     }
 }
