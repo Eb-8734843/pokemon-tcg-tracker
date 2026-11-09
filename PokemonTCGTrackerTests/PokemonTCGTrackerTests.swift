@@ -364,3 +364,40 @@ struct OwnershipEditorTests {
         #expect(try ownedIDs() == ["s-001"])
     }
 }
+
+// MARK: - Widget summary
+
+struct WidgetSnapshotTests {
+    func set(_ id: String, _ name: String, total: Int) -> TCGSet {
+        TCGSet(id: id, name: name, series: "Mega Evolution", printedTotal: nil, total: total,
+               releaseDate: Date(timeIntervalSince1970: 0), logoBase: nil, symbolBase: nil)
+    }
+
+    @Test func summarisesValueAndSetsClosestToComplete() {
+        let owned: [WidgetSnapshotWriter.OwnedCardInfo] = [
+            .init(cardID: "a-1", setID: "a", priceEUR: 1.00),
+            .init(cardID: "b-1", setID: "b", priceEUR: 0.50),
+            .init(cardID: "b-2", setID: "b", priceEUR: nil),
+            .init(cardID: "x-1", setID: "unknown", priceEUR: 2.00),   // set not in the saved list
+        ]
+        let sets = [set("a", "Big Set", total: 100), set("b", "Small Set", total: 4)]
+        let cardsB = (1...4).map { TCGCard(id: "b-\($0)", name: "B\($0)", number: "\($0)", category: "Pokemon",
+                                           rarity: nil, types: nil, imageBase: nil, priceEUR: 0.25) }
+
+        let snapshot = WidgetSnapshotWriter.makeSnapshot(
+            owned: owned, sets: sets, cardsForSet: { $0 == "b" ? cardsB : nil }, eurToGBP: 0.8)
+
+        #expect(snapshot.cardCount == 4)
+        #expect(abs(snapshot.valueGBP - 2.80) < 0.0001)              // (1.00 + 0.50 + 2.00) × 0.8
+        #expect(snapshot.sets.map(\.id) == ["b", "a"])                // 2/4 before 1/100
+        #expect(abs((snapshot.sets[0].remainingGBP ?? 0) - 0.40) < 0.0001)   // two missing × €0.25 × 0.8
+        #expect(snapshot.sets[1].remainingGBP == nil)                 // Big Set's cards not loaded yet
+    }
+
+    @Test func comparesContentNotTime() {
+        let a = WidgetSnapshot(updated: .now, cardCount: 1, valueGBP: 1, sets: [])
+        let b = WidgetSnapshot(updated: .distantPast, cardCount: 1, valueGBP: 1, sets: [])
+        #expect(a.hasSameContent(as: b))
+        #expect(!a.hasSameContent(as: nil))
+    }
+}

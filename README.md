@@ -53,7 +53,7 @@ The project has no development team set, so it runs in the simulator. To run it 
 
 ## Tests
 
-28 unit tests (Swift Testing) cover reading TCGdex data, card sorting, search and filters, saving on the phone, the migration, prices, completion totals and Undo.
+30 unit tests (Swift Testing) cover reading TCGdex data, card sorting, search and filters, saving on the phone, the migration, prices, completion totals, Undo and the widget summary.
 
 ```bash
 xcodebuild test -project PokemonTCGTracker.xcodeproj -scheme PokemonTCGTracker -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PokemonTCGTrackerTests
