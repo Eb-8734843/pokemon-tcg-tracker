@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 /// A small bar at the bottom of the screen: "Unmarked Tropius   Undo".
 /// It disappears a few seconds after the last change.

@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C6C6FB05309F41170037E906 /* CollectionWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C6C6FB01309F41170037E906 /* CollectionWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		C6C6FB07309F41170037E906 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C6C63901309F41150037E906 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C6C6FB09309F41170037E906;
+			remoteInfo = CollectionWidget;
+		};
 		C6C63919309F41170037E906 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C6C63901309F41150037E906 /* Project object */;
@@ -23,11 +34,36 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		C6C6FB06309F41170037E906 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C6C6FB05309F41170037E906 /* CollectionWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		C6C63909309F41150037E906 /* PokemonTCGTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PokemonTCGTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6C63918309F41170037E906 /* PokemonTCGTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PokemonTCGTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6C63922309F41170037E906 /* PokemonTCGTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PokemonTCGTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6C6FB01309F41170037E906 /* CollectionWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CollectionWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C6C6FB03309F41170037E906 /* Exceptions for "CollectionWidget" folder in "CollectionWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C6C6FB09309F41170037E906 /* CollectionWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C6C6390B309F41150037E906 /* PokemonTCGTracker */ = {
@@ -43,6 +79,19 @@
 		C6C63925309F41170037E906 /* PokemonTCGTrackerUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PokemonTCGTrackerUITests;
+			sourceTree = "<group>";
+		};
+		C6C6FB02309F41170037E906 /* CollectionWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C6C6FB03309F41170037E906 /* Exceptions for "CollectionWidget" folder in "CollectionWidget" target */,
+			);
+			path = CollectionWidget;
+			sourceTree = "<group>";
+		};
+		C6C6FB04309F41170037E906 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +118,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6C6FB11309F41170037E906 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +134,8 @@
 				C6C6390B309F41150037E906 /* PokemonTCGTracker */,
 				C6C6391B309F41170037E906 /* PokemonTCGTrackerTests */,
 				C6C63925309F41170037E906 /* PokemonTCGTrackerUITests */,
+				C6C6FB02309F41170037E906 /* CollectionWidget */,
+				C6C6FB04309F41170037E906 /* Shared */,
 				C6C6390A309F41150037E906 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +146,7 @@
 				C6C63909309F41150037E906 /* PokemonTCGTracker.app */,
 				C6C63918309F41170037E906 /* PokemonTCGTrackerTests.xctest */,
 				C6C63922309F41170037E906 /* PokemonTCGTrackerUITests.xctest */,
+				C6C6FB01309F41170037E906 /* CollectionWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,13 +161,16 @@
 				C6C63905309F41150037E906 /* Sources */,
 				C6C63906309F41150037E906 /* Frameworks */,
 				C6C63907309F41150037E906 /* Resources */,
+				C6C6FB06309F41170037E906 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C6C6FB08309F41170037E906 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				C6C6390B309F41150037E906 /* PokemonTCGTracker */,
+				C6C6FB04309F41170037E906 /* Shared */,
 			);
 			name = PokemonTCGTracker;
 			packageProductDependencies = (
@@ -163,6 +225,29 @@
 			productReference = C6C63922309F41170037E906 /* PokemonTCGTrackerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		C6C6FB09309F41170037E906 /* CollectionWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6C6FB13309F41170037E906 /* Build configuration list for PBXNativeTarget "CollectionWidget" */;
+			buildPhases = (
+				C6C6FB10309F41170037E906 /* Sources */,
+				C6C6FB11309F41170037E906 /* Frameworks */,
+				C6C6FB12309F41170037E906 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C6C6FB02309F41170037E906 /* CollectionWidget */,
+				C6C6FB04309F41170037E906 /* Shared */,
+			);
+			name = CollectionWidget;
+			packageProductDependencies = (
+			);
+			productName = CollectionWidget;
+			productReference = C6C6FB01309F41170037E906 /* CollectionWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +269,9 @@
 						CreatedOnToolsVersion = 26.6;
 						TestTargetID = C6C63908309F41150037E906;
 					};
+					C6C6FB09309F41170037E906 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 				};
 			};
 			buildConfigurationList = C6C63904309F41150037E906 /* Build configuration list for PBXProject "PokemonTCGTracker" */;
@@ -203,6 +291,7 @@
 				C6C63908309F41150037E906 /* PokemonTCGTracker */,
 				C6C63917309F41170037E906 /* PokemonTCGTrackerTests */,
 				C6C63921309F41170037E906 /* PokemonTCGTrackerUITests */,
+				C6C6FB09309F41170037E906 /* CollectionWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +312,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C6C63920309F41170037E906 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C6C6FB12309F41170037E906 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +349,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C6C6FB10309F41170037E906 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +368,11 @@
 			isa = PBXTargetDependency;
 			target = C6C63908309F41150037E906 /* PokemonTCGTracker */;
 			targetProxy = C6C63923309F41170037E906 /* PBXContainerItemProxy */;
+		};
+		C6C6FB08309F41170037E906 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C6C6FB09309F41170037E906 /* CollectionWidget */;
+			targetProxy = C6C6FB07309F41170037E906 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -393,10 +501,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PokemonTCGTracker/PokemonTCGTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "TCG Tracker";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -424,10 +534,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PokemonTCGTracker/PokemonTCGTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "TCG Tracker";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -530,6 +642,64 @@
 			};
 			name = Release;
 		};
+		C6C6FB14309F41170037E906 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CollectionWidget/CollectionWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CollectionWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Collection";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = glukka.wmin.ac.uk.PokemonTCGTracker.CollectionWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C6C6FB15309F41170037E906 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CollectionWidget/CollectionWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CollectionWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Collection";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = glukka.wmin.ac.uk.PokemonTCGTracker.CollectionWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -565,6 +735,15 @@
 			buildConfigurations = (
 				C6C63933309F41170037E906 /* Debug */,
 				C6C63934309F41170037E906 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C6C6FB13309F41170037E906 /* Build configuration list for PBXNativeTarget "CollectionWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C6C6FB14309F41170037E906 /* Debug */,
+				C6C6FB15309F41170037E906 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
