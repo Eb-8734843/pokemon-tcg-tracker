@@ -20,6 +20,9 @@ nonisolated struct TCGCard: Codable, Identifiable, Hashable, Sendable {
     let types: [String]?
     /// Base URL of the card image (no size or extension). Missing for some cards.
     let imageBase: URL?
+    /// Cardmarket price in euros (see `CardmarketPrice.bestEUR`). Missing when
+    /// Cardmarket has no sales, or when only the short card details loaded.
+    var priceEUR: Double? = nil
 
     var smallImageURL: URL? { imageBase?.appending(path: "low.webp") }
     var largeImageURL: URL? { imageBase?.appending(path: "high.webp") }

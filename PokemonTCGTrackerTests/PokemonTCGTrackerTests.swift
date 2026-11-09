@@ -216,3 +216,74 @@ struct OwnedCardMigrationTests {
         #expect(sets.first?.total == 120)
     }
 }
+
+// MARK: - Prices
+
+struct PriceTests {
+    func decodePrice(_ json: String) throws -> Double? {
+        try JSONDecoder().decode(CardmarketPrice.self, from: json.data(using: .utf8)!).bestEUR
+    }
+
+    @Test func usesTrendThenAverageThenHolo() throws {
+        #expect(try decodePrice(#"{"trend":0.61,"avg30":0.59,"low":0.05,"trend-holo":0}"#) == 0.61)
+        #expect(try decodePrice(#"{"trend":0,"avg30":0.59,"trend-holo":0.2}"#) == 0.59)
+        #expect(try decodePrice(#"{"trend":null,"avg30":null,"trend-holo":0.2}"#) == 0.2)
+        #expect(try decodePrice(#"{"trend":0,"avg30":0,"trend-holo":0}"#) == nil)
+    }
+
+    @Test func fullCardCarriesPrice() throws {
+        let json = """
+        {"id":"me05-120","localId":"120","name":"Mega Darkrai ex","category":"Pokemon",
+         "pricing":{"cardmarket":{"unit":"EUR","trend":127.35,"avg30":132.3,"low":100,"trend-holo":0}}}
+        """.data(using: .utf8)!
+        let card = try TCGdexClient.decoder.decode(CardDetail.self, from: json).tcgCard
+        #expect(card.priceEUR == 127.35)
+    }
+
+    @MainActor @Test func formatsPounds() {
+        let rates = ExchangeRates(cache: nil)   // uses the fallback rate, 0.83415
+        #expect(rates.format(eur: 0.61) == "£0.51")
+        #expect(rates.format(eur: 0.002) == "<£0.01")
+        #expect(rates.format(eur: 0) == "£0.00")
+    }
+
+    @Test func refreshesMissingOrOldPrices() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(OwnedPriceRefresher.needsRefresh(nil, now: now))
+        #expect(OwnedPriceRefresher.needsRefresh(now.addingTimeInterval(-13 * 3600), now: now))
+        #expect(!OwnedPriceRefresher.needsRefresh(now.addingTimeInterval(-60), now: now))
+    }
+}
+
+// MARK: - Cheapest path to completion
+
+struct CompletionPlanTests {
+    func card(_ number: String, _ price: Double?) -> TCGCard {
+        TCGCard(id: "s-\(number)", name: "Card \(number)", number: number, category: "Pokemon",
+                rarity: nil, types: nil, imageBase: nil, priceEUR: price)
+    }
+
+    var cards: [TCGCard] {
+        [card("001", 0.02), card("002", 5.00), card("003", nil), card("004", 0.02), card("005", 127.35), card("006", 0.50)]
+    }
+
+    @Test func listsMissingCardsCheapestFirst() {
+        let plan = CompletionPlan(cards: cards, ownedIDs: ["s-002"])
+        #expect(plan.pricedMissing.map(\.number) == ["001", "004", "006", "005"])   // ties keep number order
+        #expect(plan.unpricedMissing.map(\.number) == ["003"])
+        #expect(plan.missingCount == 5)
+    }
+
+    @Test func addsUpTotals() {
+        let plan = CompletionPlan(cards: cards, ownedIDs: ["s-002"])
+        #expect(abs(plan.totalEUR - 127.89) < 0.0001)
+        #expect(abs(plan.cheapestTotalEUR(3) - 0.54) < 0.0001)
+        #expect(abs(plan.cheapestTotalEUR(99) - plan.totalEUR) < 0.0001)
+    }
+
+    @Test func completeWhenNothingMissing() {
+        let plan = CompletionPlan(cards: cards, ownedIDs: Set(cards.map(\.id)))
+        #expect(plan.isComplete)
+        #expect(plan.totalEUR == 0)
+    }
+}

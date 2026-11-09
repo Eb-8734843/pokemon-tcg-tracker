@@ -17,6 +17,10 @@ final class OwnedCard {
     var name: String
     var number: String
     var dateAdded: Date
+    /// Last known Cardmarket price in euros, kept here so the collection's
+    /// value can be shown offline and without loading every set.
+    var priceEUR: Double?
+    var priceUpdated: Date?
 
     init(card: TCGCard, setID: String, dateAdded: Date = .now) {
         self.cardID = card.id
@@ -24,5 +28,14 @@ final class OwnedCard {
         self.name = card.name
         self.number = card.number
         self.dateAdded = dateAdded
+        self.priceEUR = card.priceEUR
+        self.priceUpdated = card.priceEUR == nil ? nil : .now
+    }
+
+    /// Takes a newer price from freshly loaded card details.
+    func updatePrice(from card: TCGCard, at date: Date = .now) {
+        guard let price = card.priceEUR else { return }
+        priceEUR = price
+        priceUpdated = date
     }
 }

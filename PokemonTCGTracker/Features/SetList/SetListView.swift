@@ -40,6 +40,11 @@ struct SetListView: View {
         case .loaded:
             let ownedBySet = Dictionary(grouping: ownedCards, by: \.setID).mapValues(\.count)
             List {
+                if !ownedCards.isEmpty, model.searchText.isEmpty {
+                    Section {
+                        CollectionValueRow(ownedCards: ownedCards)
+                    }
+                }
                 ForEach(model.seriesSections, id: \.series) { section in
                     Section(section.series) {
                         ForEach(section.sets) { set in
@@ -114,7 +119,38 @@ struct SetRow: View {
     }
 }
 
+/// "Your collection: 4 cards · about £0.62".
+struct CollectionValueRow: View {
+    let ownedCards: [OwnedCard]
+    @Environment(ExchangeRates.self) private var exchangeRates
+
+    var body: some View {
+        let priced = ownedCards.compactMap(\.priceEUR)
+        let unpriced = ownedCards.count - priced.count
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Your collection")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                Text(exchangeRates.format(eur: priced.reduce(0, +)))
+                    .font(.title.bold().monospacedDigit())
+                Spacer()
+                Text("\(ownedCards.count) \(ownedCards.count == 1 ? "card" : "cards")")
+                    .foregroundStyle(.secondary)
+            }
+            if unpriced > 0 {
+                Text("\(unpriced) without a price yet")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 #Preview {
     SetListView()
         .modelContainer(for: OwnedCard.self, inMemory: true)
+        .environment(ExchangeRates(cache: nil))
 }

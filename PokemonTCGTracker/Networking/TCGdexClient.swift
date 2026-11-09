@@ -81,34 +81,39 @@ nonisolated struct TCGdexClient: Sendable {
     /// the short details (no rarity or type), so one bad card doesn't hide the set.
     func fetchCards(setID: String) async throws -> [TCGCard] {
         let summaries = try await fetchCardSummaries(setID: setID)
+        let details = try await fetchCardDetails(ids: summaries.map(\.id))
+        var cards = summaries.map { details[$0.id] ?? $0.tcgCard }
+        cards.sort(by: TCGCard.byCollectorNumber)
+        cache?.save(cards, key: Self.cardsCacheKey(setID))
+        return cards
+    }
 
-        var cards: [TCGCard] = []
-        cards.reserveCapacity(summaries.count)
-        try await withThrowingTaskGroup(of: TCGCard.self) { group in
-            var next = summaries.makeIterator()
+    /// Full details (including price) for each card ID, a few at a time.
+    /// Cards that fail to load are left out of the result rather than failing everything.
+    func fetchCardDetails(ids: [String]) async throws -> [String: TCGCard] {
+        var results: [String: TCGCard] = [:]
+        try await withThrowingTaskGroup(of: TCGCard?.self) { group in
+            var next = ids.makeIterator()
             func addTask() {
-                guard let summary = next.next() else { return }
+                guard let id = next.next() else { return }
                 group.addTask {
                     do {
-                        let detail: CardDetail = try await send(URLRequest(url: baseURL.appending(path: "cards/\(summary.id)")))
+                        let detail: CardDetail = try await send(URLRequest(url: baseURL.appending(path: "cards/\(id)")))
                         return detail.tcgCard
                     } catch is CancellationError {
                         throw CancellationError()
                     } catch {
-                        return summary.tcgCard
+                        return nil
                     }
                 }
             }
             for _ in 0..<maxConcurrentRequests { addTask() }
             while let card = try await group.next() {
-                cards.append(card)
+                if let card { results[card.id] = card }
                 addTask()
             }
         }
-
-        cards.sort(by: TCGCard.byCollectorNumber)
-        cache?.save(cards, key: Self.cardsCacheKey(setID))
-        return cards
+        return results
     }
 
     /// The card list for a set saved from the last successful fetch, if any.
@@ -216,8 +221,33 @@ nonisolated struct CardDetail: Decodable, Sendable {
     let category: String?
     let rarity: String?
     let types: [String]?
+    let pricing: Pricing?
+
+    struct Pricing: Decodable, Sendable {
+        let cardmarket: CardmarketPrice?
+    }
 
     var tcgCard: TCGCard {
-        TCGCard(id: id, name: name, number: localId, category: category, rarity: rarity, types: types, imageBase: image)
+        TCGCard(id: id, name: name, number: localId, category: category, rarity: rarity, types: types,
+                imageBase: image, priceEUR: pricing?.cardmarket?.bestEUR)
+    }
+}
+
+/// Cardmarket prices in euros, as TCGdex gives them (updated daily).
+nonisolated struct CardmarketPrice: Decodable, Sendable {
+    let trend: Double?
+    let avg30: Double?
+    let trendHolo: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case trend, avg30
+        case trendHolo = "trend-holo"
+    }
+
+    /// The price to use for a card: the trend price (what it's selling for now),
+    /// else the 30-day average, else the reverse-holo trend. Zero counts as no price.
+    /// The "low" price is ignored because it's usually one damaged or odd listing.
+    var bestEUR: Double? {
+        [trend, avg30, trendHolo].lazy.compactMap { $0 }.first { $0 > 0 }
     }
 }

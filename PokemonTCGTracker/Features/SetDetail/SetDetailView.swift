@@ -10,6 +10,7 @@ struct SetDetailView: View {
     @State private var model: SetDetailViewModel
     @State private var filter = CardFilter()
     @Environment(\.modelContext) private var modelContext
+    @Environment(ExchangeRates.self) private var exchangeRates
     @Query private var ownedCards: [OwnedCard]
 
     init(set: TCGSet) {
@@ -31,6 +32,7 @@ struct SetDetailView: View {
                 ToolbarItem(placement: .topBarTrailing) { filterMenu }
             }
             .task { await model.load() }
+            .onChange(of: model.cards) { updateOwnedPrices() }
     }
 
     @ViewBuilder
@@ -84,6 +86,7 @@ struct SetDetailView: View {
     private func header(visibleCount: Int) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             SetProgressView(owned: ownedCards.count, total: model.cards.count, showsPercentage: true)
+            completionLink
             HStack {
                 if filter.hasActiveFilters || !filter.searchText.isEmpty {
                     Text("Showing \(visibleCount) of \(model.cards.count)")
@@ -102,6 +105,35 @@ struct SetDetailView: View {
         .padding(.horizontal)
         .padding(.top, 8)
         .padding(.bottom, 4)
+    }
+
+    /// "116 to go · about £162.40 — See cheapest first".
+    @ViewBuilder
+    private var completionLink: some View {
+        let plan = CompletionPlan(cards: model.cards, ownedIDs: ownedIDs)
+        if !plan.isComplete {
+            NavigationLink {
+                CompletionView(set: model.set, cards: model.cards)
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(plan.missingCount) to go · about \(exchangeRates.format(eur: plan.totalEUR))")
+                            .font(.subheadline.weight(.semibold))
+                        Text("See the cheapest cards to buy first")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(10)
+                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
     }
 
     private var noMatches: some View {
@@ -164,6 +196,14 @@ struct SetDetailView: View {
         filter.ownership = .all
     }
 
+    /// Copies freshly loaded prices onto the owned cards in this set.
+    private func updateOwnedPrices() {
+        let cardsByID = Dictionary(model.cards.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for owned in ownedCards {
+            if let card = cardsByID[owned.cardID] { owned.updatePrice(from: card) }
+        }
+    }
+
     private func toggleOwned(_ card: TCGCard) {
         if let existing = ownedCards.first(where: { $0.cardID == card.id }) {
             modelContext.delete(existing)
@@ -176,6 +216,7 @@ struct SetDetailView: View {
 struct CardCell: View {
     let card: TCGCard
     let isOwned: Bool
+    @Environment(ExchangeRates.self) private var exchangeRates
 
     var body: some View {
         VStack(spacing: 4) {
@@ -210,9 +251,15 @@ struct CardCell: View {
             }
             .animation(.easeInOut(duration: 0.15), value: isOwned)
 
-            Text("#\(card.displayNumber)")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Text("#\(card.displayNumber)")
+                    .foregroundStyle(.secondary)
+                if let price = card.priceEUR {
+                    Text(exchangeRates.format(eur: price))
+                        .fontWeight(.medium)
+                }
+            }
+            .font(.caption2.monospacedDigit())
         }
     }
 
