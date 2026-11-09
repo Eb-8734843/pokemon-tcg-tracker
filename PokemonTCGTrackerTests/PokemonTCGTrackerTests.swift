@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 @testable import PokemonTCGTracker
 
@@ -285,5 +286,81 @@ struct CompletionPlanTests {
         let plan = CompletionPlan(cards: cards, ownedIDs: Set(cards.map(\.id)))
         #expect(plan.isComplete)
         #expect(plan.totalEUR == 0)
+    }
+}
+
+// MARK: - Undo
+
+@MainActor
+struct OwnershipEditorTests {
+    let context: ModelContext
+    let editor = OwnershipEditor()
+    let tropius = makeCard("001", "Tropius")
+    let grubbin = makeCard("002", "Grubbin")
+
+    init() throws {
+        let container = try ModelContainer(for: OwnedCard.self,
+                                           configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        context = ModelContext(container)
+    }
+
+    func ownedIDs() throws -> Set<String> {
+        Set(try context.fetch(FetchDescriptor<OwnedCard>()).map(\.cardID))
+    }
+
+    @Test func toggleAddsThenRemoves() throws {
+        editor.toggle(tropius, setID: "s", in: context)
+        #expect(try ownedIDs() == ["s-001"])
+        #expect(editor.message == "Marked Tropius as owned")
+
+        editor.toggle(tropius, setID: "s", in: context)
+        #expect(try ownedIDs().isEmpty)
+        #expect(editor.pending.count == 2)
+    }
+
+    @Test func undoPutsBackARemovedCardAsItWas() throws {
+        let added = Date(timeIntervalSince1970: 1_700_000_000)
+        let original = OwnedCard(card: tropius, setID: "s", dateAdded: added)
+        original.priceEUR = 0.02
+        context.insert(original)
+
+        editor.toggle(tropius, setID: "s", in: context)
+        #expect(try ownedIDs().isEmpty)
+        #expect(editor.message == "Unmarked Tropius")
+
+        editor.undo(in: context)
+        let restored = try #require(try context.fetch(FetchDescriptor<OwnedCard>()).first)
+        #expect(restored.cardID == "s-001")
+        #expect(restored.dateAdded == added)
+        #expect(restored.priceEUR == 0.02)
+        #expect(editor.pending.isEmpty)
+    }
+
+    @Test func undoReversesAWholeRunOfTaps() throws {
+        context.insert(OwnedCard(card: tropius, setID: "s"))
+
+        editor.toggle(tropius, setID: "s", in: context)   // untick
+        editor.toggle(grubbin, setID: "s", in: context)   // tick
+        editor.toggle(tropius, setID: "s", in: context)   // tick again
+        editor.toggle(tropius, setID: "s", in: context)   // untick again
+        #expect(try ownedIDs() == ["s-002"])
+        #expect(editor.message == "4 changes")
+
+        editor.undo(in: context)
+        #expect(try ownedIDs() == ["s-001"])
+    }
+
+    @Test func markOwnedIgnoresCardsAlreadyOwned() throws {
+        editor.markOwned(tropius, setID: "s", in: context)
+        editor.markOwned(tropius, setID: "s", in: context)
+        #expect(try ownedIDs() == ["s-001"])
+        #expect(editor.pending.count == 1)
+    }
+
+    @Test func dismissKeepsTheChanges() throws {
+        editor.toggle(tropius, setID: "s", in: context)
+        editor.dismiss()
+        #expect(editor.pending.isEmpty)
+        #expect(try ownedIDs() == ["s-001"])
     }
 }

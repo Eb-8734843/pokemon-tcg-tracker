@@ -15,6 +15,7 @@ struct CompletionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ExchangeRates.self) private var exchangeRates
     @Query private var ownedCards: [OwnedCard]
+    @State private var editor = OwnershipEditor()
 
     init(set: TCGSet, cards: [TCGCard]) {
         self.set = set
@@ -59,6 +60,7 @@ struct CompletionView: View {
         }
         .navigationTitle("Complete \(set.name)")
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) { UndoBar(editor: editor) }
     }
 
     private func summary(_ plan: CompletionPlan) -> some View {
@@ -139,9 +141,8 @@ struct CompletionView: View {
     }
 
     private func markOwned(_ card: TCGCard) {
-        guard !ownedCards.contains(where: { $0.cardID == card.id }) else { return }
         withAnimation {
-            modelContext.insert(OwnedCard(card: card, setID: set.id))
+            editor.markOwned(card, setID: set.id, in: modelContext)
         }
     }
 }

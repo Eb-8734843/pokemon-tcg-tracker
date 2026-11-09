@@ -9,6 +9,7 @@ import SwiftData
 struct SetDetailView: View {
     @State private var model: SetDetailViewModel
     @State private var filter = CardFilter()
+    @State private var editor = OwnershipEditor()
     @Environment(\.modelContext) private var modelContext
     @Environment(ExchangeRates.self) private var exchangeRates
     @Query private var ownedCards: [OwnedCard]
@@ -25,6 +26,8 @@ struct SetDetailView: View {
 
     var body: some View {
         content
+            // Attached before .searchable so the bar sits above the bottom search field.
+            .safeAreaInset(edge: .bottom) { UndoBar(editor: editor) }
             .navigationTitle(model.set.name)
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $filter.searchText, prompt: "Search by name or number")
@@ -205,11 +208,7 @@ struct SetDetailView: View {
     }
 
     private func toggleOwned(_ card: TCGCard) {
-        if let existing = ownedCards.first(where: { $0.cardID == card.id }) {
-            modelContext.delete(existing)
-        } else {
-            modelContext.insert(OwnedCard(card: card, setID: model.set.id))
-        }
+        editor.toggle(card, setID: model.set.id, in: modelContext)
     }
 }
 
