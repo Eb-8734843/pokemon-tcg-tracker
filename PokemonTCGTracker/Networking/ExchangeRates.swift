@@ -47,6 +47,10 @@ final class ExchangeRates {
         euros * rate.eurToGBP
     }
 
+    func euros(fromGBP pounds: Double) -> Double {
+        pounds / rate.eurToGBP
+    }
+
     /// e.g. "£0.51". Anything under a penny shows as "<£0.01".
     func format(eur euros: Double) -> String {
         let gbp = pounds(fromEUR: euros)

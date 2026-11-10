@@ -287,6 +287,22 @@ struct CompletionPlanTests {
         #expect(plan.isComplete)
         #expect(plan.totalEUR == 0)
     }
+
+    @Test func budgetBuysTheCheapestCardsThatFit() {
+        // Missing, cheapest first: 0.02, 0.02, 0.50, 127.35
+        let plan = CompletionPlan(cards: cards, ownedIDs: ["s-002"])
+        #expect(plan.affordableCount(budgetEUR: 0) == 0)
+        #expect(plan.affordableCount(budgetEUR: 0.01) == 0)
+        #expect(plan.affordableCount(budgetEUR: 0.04) == 2)    // exactly enough for two
+        #expect(plan.affordableCount(budgetEUR: 0.53) == 2)    // one penny short of the third
+        #expect(plan.affordableCount(budgetEUR: 0.54) == 3)
+        #expect(plan.affordableCount(budgetEUR: 1_000) == 4)   // unpriced cards never count
+    }
+
+    @MainActor @Test func convertsBudgetToEuros() {
+        let rates = ExchangeRates(cache: nil)
+        #expect(abs(rates.euros(fromGBP: rates.pounds(fromEUR: 12.34)) - 12.34) < 0.0001)
+    }
 }
 
 // MARK: - Undo

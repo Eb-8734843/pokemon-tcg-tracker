@@ -35,4 +35,17 @@ nonisolated struct CompletionPlan: Sendable {
     func cheapestTotalEUR(_ count: Int) -> Double {
         pricedMissing.prefix(count).reduce(0) { $0 + ($1.priceEUR ?? 0) }
     }
+
+    /// How many missing cards a budget buys. Buying cheapest first always
+    /// gets the most cards for the money, so this is the longest run from the
+    /// start of `pricedMissing` that fits.
+    func affordableCount(budgetEUR: Double) -> Int {
+        var spent = 0.0
+        for (index, card) in pricedMissing.enumerated() {
+            spent += card.priceEUR ?? 0
+            // A tiny allowance so adding up prices can't push an exact budget over.
+            if spent > budgetEUR + 1e-9 { return index }
+        }
+        return pricedMissing.count
+    }
 }

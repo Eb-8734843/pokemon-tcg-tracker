@@ -19,6 +19,7 @@ Project 3 of a three-part portfolio, alongside the [Competitive Meta Tracker](ht
 - **Prices in pounds** under every card, from Cardmarket.
 - **Collection value** at the top of the set list.
 - **Cheapest path to completion**: the cards you're missing, cheapest first, with a running total and what the cheapest 10, 25, 50 and 100 cost. For example, the last 20 cards of Pitch Black cost far more than the first 100.
+- **Budget mode**: type what you want to spend, or tap £5, £10, £20 or £50, and it shows how many cards that buys, cheapest first, what's left over, and how much more the next card needs. A line in the list marks where the budget runs out. The budget is remembered between launches.
 - **Home screen widget** (small and medium) with your collection's value and the sets you're closest to finishing.
 - **Works offline**: set lists, card lists and prices are saved on the phone, so it works at a card shop with no signal.
 
@@ -31,7 +32,7 @@ Project 3 of a three-part portfolio, alongside the [Competitive Meta Tracker](ht
 | [`OwnedCard`](PokemonTCGTracker/Models/OwnedCard.swift) | The SwiftData record of each card you own, with its last known price so the collection value works offline. |
 | [`OwnershipEditor`](PokemonTCGTracker/Features/Shared/OwnershipEditor.swift) | Every tick and untick goes through here, so they can be undone. |
 | [`CardFilter`](PokemonTCGTracker/Features/SetDetail/CardFilter.swift) | Search and filters for a set's cards. |
-| [`CompletionPlan`](PokemonTCGTracker/Features/Completion/CompletionPlan.swift) | Works out the missing cards, cheapest first, and their totals. |
+| [`CompletionPlan`](PokemonTCGTracker/Features/Completion/CompletionPlan.swift) | Works out the missing cards, cheapest first, their totals, and how many a budget buys. |
 | [`ExchangeRates`](PokemonTCGTracker/Networking/ExchangeRates.swift) | Converts Cardmarket's euro prices to pounds with the European Central Bank's daily rate, from [Frankfurter](https://frankfurter.dev). |
 | [`WidgetSnapshot`](Shared/WidgetSnapshot.swift) | A small summary the app writes to a shared App Group folder for the [widget](CollectionWidget/CollectionWidget.swift) to read. |
 
@@ -53,7 +54,7 @@ The project has no development team set, so it runs in the simulator. To run it 
 
 ## Tests
 
-30 unit tests (Swift Testing) cover reading TCGdex data, card sorting, search and filters, saving on the phone, the migration, prices, completion totals, Undo and the widget summary.
+32 unit tests (Swift Testing) cover reading TCGdex data, card sorting, search and filters, saving on the phone, the migration, prices, completion totals, budget mode, Undo and the widget summary.
 
 ```bash
 xcodebuild test -project PokemonTCGTracker.xcodeproj -scheme PokemonTCGTracker -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:PokemonTCGTrackerTests

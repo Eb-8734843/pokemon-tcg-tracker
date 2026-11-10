@@ -16,6 +16,9 @@ struct CompletionView: View {
     @Environment(ExchangeRates.self) private var exchangeRates
     @Query private var ownedCards: [OwnedCard]
     @State private var editor = OwnershipEditor()
+    /// Saved between launches; 0 means no budget set.
+    @AppStorage("budgetGBP") private var budgetGBP = 0.0
+    @FocusState private var editingBudget: Bool
 
     init(set: TCGSet, cards: [TCGCard]) {
         self.set = set
@@ -33,9 +36,18 @@ struct CompletionView: View {
             } else {
                 summary(plan)
 
+                if !plan.pricedMissing.isEmpty {
+                    budgetSection(plan)
+                }
+
                 Section {
+                    let affordable = affordableCount(plan)
                     ForEach(Array(plan.pricedMissing.enumerated()), id: \.element.id) { index, card in
-                        row(card, runningTotalEUR: plan.cheapestTotalEUR(index + 1))
+                        if index == affordable, let affordable, affordable > 0 {
+                            budgetLine(plan, affordable: affordable)
+                        }
+                        row(card, runningTotalEUR: plan.cheapestTotalEUR(index + 1),
+                            inBudget: affordable.map { index < $0 } ?? false)
                     }
                 } header: {
                     Text("Cheapest first")
@@ -46,7 +58,7 @@ struct CompletionView: View {
                 if !plan.unpricedMissing.isEmpty {
                     Section("No price on Cardmarket") {
                         ForEach(plan.unpricedMissing) { card in
-                            row(card, runningTotalEUR: nil)
+                            row(card, runningTotalEUR: nil, inBudget: false)
                         }
                     }
                 }
@@ -61,6 +73,114 @@ struct CompletionView: View {
         .navigationTitle("Complete \(set.name)")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) { UndoBar(editor: editor) }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { editingBudget = false }
+            }
+        }
+    }
+
+    // MARK: - Budget
+
+    /// How many of the cheapest cards the budget buys, or nil with no budget set.
+    private func affordableCount(_ plan: CompletionPlan) -> Int? {
+        guard budgetGBP > 0 else { return nil }
+        return plan.affordableCount(budgetEUR: exchangeRates.euros(fromGBP: budgetGBP))
+    }
+
+    private func budgetSection(_ plan: CompletionPlan) -> some View {
+        Section {
+            HStack {
+                Label("Budget", systemImage: "sterlingsign.circle")
+                Spacer()
+                // Empty rather than "£0.00" when there's no budget, so there's nothing to delete first.
+                TextField("Amount", value: Binding(
+                    get: { budgetGBP > 0 ? budgetGBP : nil },
+                    set: { budgetGBP = max(0, $0 ?? 0) }
+                ), format: .currency(code: "GBP"))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+                    .focused($editingBudget)
+                    .frame(maxWidth: 140)
+                if budgetGBP > 0 {
+                    Button("Clear budget", systemImage: "xmark.circle.fill") { budgetGBP = 0 }
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(.secondary)
+                        .buttonStyle(.borderless)
+                }
+            }
+
+            HStack(spacing: 8) {
+                ForEach([5.0, 10, 20, 50], id: \.self) { amount in
+                    Button(amount.formatted(.currency(code: "GBP").precision(.fractionLength(0)))) {
+                        editingBudget = false
+                        budgetGBP = amount
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(budgetGBP == amount ? .accentColor : .secondary)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+
+            if let affordable = affordableCount(plan) {
+                budgetResult(plan, affordable: affordable)
+            }
+        } header: {
+            Text("Budget mode")
+        } footer: {
+            if budgetGBP == 0 {
+                Text("Enter what you want to spend to see how far it gets you, cheapest cards first.")
+            }
+        }
+    }
+
+    /// "£5.00 buys 37 of 56 missing cards · £0.42 left over".
+    private func budgetResult(_ plan: CompletionPlan, affordable: Int) -> some View {
+        let spentEUR = plan.cheapestTotalEUR(affordable)
+        let leftGBP = max(0, budgetGBP - exchangeRates.pounds(fromEUR: spentEUR))
+        let budget = budgetGBP.formatted(.currency(code: "GBP"))
+        return VStack(alignment: .leading, spacing: 4) {
+            if affordable == 0 {
+                Text("\(budget) isn't enough for the cheapest card yet.")
+                    .font(.headline)
+            } else if affordable == plan.pricedMissing.count {
+                Text("\(budget) buys every priced card you're missing.")
+                    .font(.headline)
+            } else {
+                Text("\(budget) buys **\(affordable)** of the \(plan.pricedMissing.count) priced cards you're missing.")
+            }
+            Group {
+                Text("Spent: \(exchangeRates.format(eur: spentEUR)) · left over: \(leftGBP.formatted(.currency(code: "GBP")))")
+                if affordable < plan.pricedMissing.count, let next = plan.pricedMissing[affordable].priceEUR {
+                    let shortGBP = max(0.01, exchangeRates.pounds(fromEUR: next) - leftGBP)
+                    Text("The next card, \(plan.pricedMissing[affordable].name), needs \(shortGBP.formatted(.currency(code: "GBP"))) more.")
+                }
+                if !plan.unpricedMissing.isEmpty {
+                    Text("Doesn't include the \(plan.unpricedMissing.count) without a price.")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// A divider in the list where the budget runs out.
+    private func budgetLine(_ plan: CompletionPlan, affordable: Int) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "flag.checkered")
+            Text("\(budgetGBP.formatted(.currency(code: "GBP"))) budget ends here")
+            Spacer()
+            Text(exchangeRates.format(eur: plan.cheapestTotalEUR(affordable)))
+                .monospacedDigit()
+        }
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(.green)
+        .listRowBackground(Color.green.opacity(0.12))
+        .accessibilityElement(children: .combine)
     }
 
     private func summary(_ plan: CompletionPlan) -> some View {
@@ -102,7 +222,7 @@ struct CompletionView: View {
         }
     }
 
-    private func row(_ card: TCGCard, runningTotalEUR: Double?) -> some View {
+    private func row(_ card: TCGCard, runningTotalEUR: Double?, inBudget: Bool) -> some View {
         HStack(spacing: 12) {
             AsyncImage(url: card.smallImageURL) { image in
                 image.resizable().scaledToFit()
@@ -127,11 +247,12 @@ struct CompletionView: View {
                 if let runningTotalEUR {
                     Text(exchangeRates.format(eur: runningTotalEUR))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(inBudget ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
                 }
             }
             .monospacedDigit()
         }
+        .accessibilityValue(inBudget ? "In budget" : "")
         .swipeActions {
             Button("Got it", systemImage: "checkmark") { markOwned(card) }
                 .tint(.green)
