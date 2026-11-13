@@ -4,6 +4,10 @@ An iPhone app for logging Pokémon cards that helps you complete sets as cheaply
 
 Most collection apps log cards and show their value. This one focuses on finishing sets: it tells you what's left, what it costs, and which cards to buy first.
 
+<p align="center">
+  <img src="docs/demo.gif" width="300" alt="Demo: opening Pitch Black, marking a card owned and undoing it, then setting a £5 budget on the completion screen">
+</p>
+
 | Sets | Card grid | Cheapest path to completion | Home screen widget |
 |---|---|---|---|
 | ![Set list with collection value and progress bars](docs/screenshots/set-list.png) | ![Card grid with prices and owned cards](docs/screenshots/card-grid.png) | ![Missing cards sorted cheapest first](docs/screenshots/completion.png) | ![Collection widget on the home screen](docs/screenshots/widget.png) |
