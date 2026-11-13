@@ -50,7 +50,14 @@ The app started on [pokemontcg.io](https://pokemontcg.io). In November 2026 that
 2. Choose an iPhone simulator and press **Run**. No API key or account is needed.
 3. To try the widget: on the simulator's home screen, press and hold, tap **Edit → Add Widget**, and search for "TCG Tracker".
 
-The project has no development team set, so it runs in the simulator. To run it on a real iPhone, pick your team under **Signing & Capabilities** for both the app and the CollectionWidget target, and change the App Group ID to one your account owns.
+To run it on your own iPhone:
+
+1. Sign in under **Xcode → Settings → Apple Accounts**. A free Apple ID works.
+2. Under **Signing & Capabilities**, pick your team for both the app and the CollectionWidget target. If Xcode says the bundle ID or App Group is taken, change them to ones your account can register (the App Group ID also appears in [`WidgetSnapshot.swift`](Shared/WidgetSnapshot.swift) and the two `.entitlements` files).
+3. Connect the phone, turn on **Developer Mode** (Settings → Privacy & Security), pick it as the run destination and press **Run**.
+4. The first time, trust the developer on the phone under **Settings → General → VPN & Device Management**.
+
+With a free Apple ID the app stops opening after 7 days; run it from Xcode again to renew it.
 
 ## Tests
 
